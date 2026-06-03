@@ -10534,16 +10534,20 @@ Graph.compare = (graph1, graph2) => {
     }
   }
   for (const link1 of graph1.links) {
-    const graph2SourceLinkMap = graph2.linkIndex.get(link1.source.id);
+    const sourceId = link1.source && typeof link1.source === "object" ? link1.source.id : link1.source;
+    const targetId = link1.target && typeof link1.target === "object" ? link1.target.id : link1.target;
+    const graph2SourceLinkMap = graph2.linkIndex.get(sourceId);
     if (!graph2SourceLinkMap) {
       return false;
     }
-    const graph2LinkIndex = graph2SourceLinkMap.get(link1.target.id);
+    const graph2LinkIndex = graph2SourceLinkMap.get(targetId);
     if (graph2LinkIndex === void 0) {
       return false;
     }
     const link2 = graph2.links[graph2LinkIndex];
-    if (!link2 || link2.source.id !== link1.source.id || link2.target.id !== link1.target.id) {
+    const link2SourceId = link2 && link2.source && typeof link2.source === "object" ? link2.source.id : (link2 ? link2.source : undefined);
+    const link2TargetId = link2 && link2.target && typeof link2.target === "object" ? link2.target.id : (link2 ? link2.target : undefined);
+    if (!link2 || link2SourceId !== sourceId || link2TargetId !== targetId) {
       return false;
     }
   }
@@ -66769,7 +66773,10 @@ var getNewGlobalGraph = (plugin, config2) => {
 };
 var GlobalGraph3dView = class extends Graph3dView {
   constructor(plugin, contentEl, itemView) {
-    super(contentEl, plugin, "global" /* global */, plugin.globalGraph, itemView);
+    super(contentEl, plugin, "global" /* global */, getNewGlobalGraph(plugin, {
+      searchResults: [],
+      filterSetting: plugin.settingManager.getSettings().temporaryGlobalGraphSetting.filter
+    }), itemView);
   }
   handleGroupColorSearchResultChange() {
     var _a3;
@@ -66880,7 +66887,11 @@ var getNewLocalGraph = (plugin, config2) => {
 };
 var LocalGraph3dView = class extends Graph3dView {
   constructor(plugin, contentEl, itemView) {
-    super(contentEl, plugin, "local" /* local */, getNewLocalGraph(plugin), itemView);
+    super(contentEl, plugin, "local" /* local */, getNewLocalGraph(plugin, {
+      centerFile: plugin.app.workspace.getActiveFile(),
+      searchResults: [],
+      filterSetting: plugin.settingManager.getSettings().temporaryLocalGraphSetting.filter
+    }), itemView);
     this.handleFileChange = (file) => {
       if (!file)
         return;
@@ -67074,6 +67085,13 @@ var Graph3dPlugin = class extends import_obsidian20.Plugin {
       if (this.cacheIsReady.value && !deepCompare(this._resolvedCache, this.app.metadataCache.resolvedLinks)) {
         this._resolvedCache = structuredClone(this.app.metadataCache.resolvedLinks);
         this.globalGraph = Graph.createFromApp(this.app);
+        if (this.isCacheReadyOnce) {
+          this.activeGraphViews.forEach((view) => {
+            view.handleMetadataCacheChange();
+          });
+        }
+      } else {
+        this.isCacheReadyOnce = true;
         this.activeGraphViews.forEach((view) => {
           view.handleMetadataCacheChange();
         });
