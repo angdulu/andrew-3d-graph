@@ -1,5 +1,4 @@
 {
-  "savedSettings": [],
   "temporaryLocalGraphSetting": {
     "filter": {
       "searchQuery": "",
@@ -11,12 +10,11 @@
     "groups": [],
     "display": {
       "nodeSize": 3,
-      "linkThickness": 2,
+      "linkThickness": 3,
       "linkDistance": 100,
-      "nodeRepulsion": 2800,
-      "distanceFromFocal": 300,
+      "nodeRepulsion": 3000,
+      "distanceFromFocal": 100,
       "nodeHoverColor": "#8a5cf5",
-      "nodeHoverNeighbourColor": "#8c8c8c",
       "linkHoverColor": "#8a5cf5",
       "showExtension": false,
       "showFullPath": false,
@@ -30,17 +28,16 @@
     "filter": {
       "searchQuery": "",
       "showOrphans": true,
-      "showAttachments": true
+      "showAttachments": false
     },
     "groups": [],
     "display": {
       "nodeSize": 3,
-      "linkThickness": 2,
+      "linkThickness": 3,
       "linkDistance": 100,
-      "nodeRepulsion": 2800,
-      "distanceFromFocal": 300,
+      "nodeRepulsion": 3000,
+      "distanceFromFocal": 100,
       "nodeHoverColor": "#8a5cf5",
-      "nodeHoverNeighbourColor": "#8c8c8c",
       "linkHoverColor": "#8a5cf5",
       "showExtension": false,
       "showFullPath": false,

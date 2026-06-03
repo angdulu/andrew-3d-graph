@@ -14523,14 +14523,12 @@ var defaultGlobalGraphSetting = {
   groups: [],
   display: {
     nodeSize: nodeSize.default,
-    linkThickness: linkThickness.default,
+    linkThickness: 3,
     linkDistance: linkDistance.default,
-    nodeRepulsion: nodeRepulsion.default,
-    distanceFromFocal: 300,
+    nodeRepulsion: 3000,
+    distanceFromFocal: 100,
     // node hover color is red
     nodeHoverColor: getAccentColorHex(),
-    // node hover neighbour color is green
-    nodeHoverNeighbourColor: getGraphNodeColorHex(),
     // link hover color is blue
     linkHoverColor: getAccentColorHex(),
     showExtension: false,
@@ -14552,14 +14550,12 @@ var defaultLocalGraphSetting = {
   groups: [],
   display: {
     nodeSize: nodeSize.default,
-    linkThickness: linkThickness.default,
+    linkThickness: 3,
     linkDistance: linkDistance.default,
-    nodeRepulsion: nodeRepulsion.default,
-    distanceFromFocal: 300,
+    nodeRepulsion: 3000,
+    distanceFromFocal: 100,
     // node hover color is red
     nodeHoverColor: getAccentColorHex(),
-    // node hover neighbour color is green
-    nodeHoverNeighbourColor: getGraphNodeColorHex(),
     // link hover color is blue
     linkHoverColor: getAccentColorHex(),
     showExtension: false,
@@ -14577,7 +14573,6 @@ var BaseDisplaySettingsSchema = z.object({
   nodeRepulsion: z.number().default(defaultGlobalGraphSetting.display.nodeRepulsion),
   distanceFromFocal: z.number().default(defaultGlobalGraphSetting.display.distanceFromFocal),
   nodeHoverColor: z.string().default(defaultGlobalGraphSetting.display.nodeHoverColor),
-  nodeHoverNeighbourColor: z.string().default(defaultGlobalGraphSetting.display.nodeHoverNeighbourColor),
   linkHoverColor: z.string().default(defaultGlobalGraphSetting.display.linkHoverColor),
   showExtension: z.boolean().default(defaultGlobalGraphSetting.display.showExtension),
   showFullPath: z.boolean().default(defaultGlobalGraphSetting.display.showFullPath),
@@ -14624,7 +14619,6 @@ var SavedSettingSchema = z.object({
   type: z.nativeEnum(GraphType)
 });
 var SettingSchema = z.object({
-  savedSettings: z.array(SavedSettingSchema),
   temporaryLocalGraphSetting: LocalGraphSettingsSchema,
   temporaryGlobalGraphSetting: GlobalGraphSettingsSchema,
   pluginSetting: z.object({
@@ -14713,7 +14707,6 @@ var MySettingManager = class {
   }
 };
 var DEFAULT_SETTING = {
-  savedSettings: [],
   temporaryLocalGraphSetting: MySettingManager.getNewSetting("local" /* local */),
   temporaryGlobalGraphSetting: MySettingManager.getNewSetting(
     "global" /* global */
@@ -65009,10 +65002,10 @@ var ForceGraphEngine = class {
       this.highlightedLinks.clear();
     };
     this.getLinkColor = (link) => {
-      // Always use the natural graph line colour — highlighted links stay bright,
-      // non-highlighted links dim. No special hover colour applied.
-      const color = this.forceGraph.view.theme.graphLine;
-      return hexToRGBA(color, this.getIsAnyHighlighted() && !this.isHighlightedLink(link) ? 0.1 : 1);
+      const settings = this.forceGraph.view.settingManager.getCurrentSetting();
+      const isHighlighted = this.isHighlightedLink(link);
+      const color = isHighlighted ? settings.display.linkHoverColor : this.forceGraph.view.theme.graphLine;
+      return hexToRGBA(color, this.getIsAnyHighlighted() && !isHighlighted ? 0.1 : 1);
     };
     this.getLinkWidth = (link) => {
       const setting = this.forceGraph.view.settingManager.getCurrentSetting();
@@ -65107,6 +65100,10 @@ var ForceGraphEngine = class {
       if (this.selectedNodes.has(node)) {
         return hexToRGBA(selectedColor, 1);
       }
+      // If this is the hovered node, use the nodeHoverColor from settings.
+      if (node === this.hoveredNode) {
+        return hexToRGBA(settings.display.nodeHoverColor, 1);
+      }
       // Resolve the node's natural colour (respects group colours).
       let color = theme.graphNode;
       settings.groups.forEach((group, index6) => {
@@ -65118,8 +65115,7 @@ var ForceGraphEngine = class {
             color = group.color;
         }
       });
-      // When hovering: dim non-neighbourhood nodes; keep hovered node and
-      // neighbours at their natural colour (no special highlight colour applied).
+      // When hovering: dim non-neighbourhood nodes; keep neighbours at their natural colour.
       const opacity = anyHighlighted && !this.isHighlightedNode(node) ? 0.3 : 1;
       return hexToRGBA(color, opacity);
     };
@@ -66412,18 +66408,7 @@ var DisplaySettingsView = (graphSetting, containerEl, settingManager) => {
       });
     }
   );
-  addColorPickerSetting(
-    containerEl,
-    {
-      name: "Node hover neighbour color",
-      value: displaySettings.nodeHoverNeighbourColor
-    },
-    (value) => {
-      settingManager.updateCurrentSettings((setting) => {
-        setting.value.display.nodeHoverNeighbourColor = value;
-      });
-    }
-  );
+
   addColorPickerSetting(
     containerEl,
     {
@@ -66541,12 +66526,7 @@ var GraphSettingManager = class {
       }
     );
 
-    this.appendSettingGroup(
-      this.graphControlsEl,
-      void 0,
-      "Saved settings",
-      (_, containerEl) => SavedSettingsView(containerEl, this.graphView)
-    );
+    // Saved settings section removed
     this.toggleCollapsed(collapsed);
     waitFor(() => {
       return this.triggerSearch();
