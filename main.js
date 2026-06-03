@@ -67074,13 +67074,6 @@ var Graph3dPlugin = class extends import_obsidian20.Plugin {
       if (this.cacheIsReady.value && !deepCompare(this._resolvedCache, this.app.metadataCache.resolvedLinks)) {
         this._resolvedCache = structuredClone(this.app.metadataCache.resolvedLinks);
         this.globalGraph = Graph.createFromApp(this.app);
-        if (this.isCacheReadyOnce) {
-          this.activeGraphViews.forEach((view) => {
-            view.handleMetadataCacheChange();
-          });
-        }
-      } else {
-        this.isCacheReadyOnce = true;
         this.activeGraphViews.forEach((view) => {
           view.handleMetadataCacheChange();
         });
