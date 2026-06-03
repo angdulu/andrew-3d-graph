@@ -65009,8 +65009,10 @@ var ForceGraphEngine = class {
       this.highlightedLinks.clear();
     };
     this.getLinkColor = (link) => {
-      const color = this.isHighlightedLink(link) ? this.forceGraph.view.settingManager.getCurrentSetting().display.linkHoverColor : this.forceGraph.view.theme.graphLine;
-      return hexToRGBA(color, this.getIsAnyHighlighted() && !this.isHighlightedLink(link) ? 0.2 : 1);
+      // Always use the natural graph line colour — highlighted links stay bright,
+      // non-highlighted links dim. No special hover colour applied.
+      const color = this.forceGraph.view.theme.graphLine;
+      return hexToRGBA(color, this.getIsAnyHighlighted() && !this.isHighlightedLink(link) ? 0.1 : 1);
     };
     this.getLinkWidth = (link) => {
       const setting = this.forceGraph.view.settingManager.getCurrentSetting();
@@ -65097,32 +65099,29 @@ var ForceGraphEngine = class {
       return this.highlightedNodes.has(node.id);
     };
     this.getNodeColor = (node) => {
-      let color;
       const settings = this.forceGraph.view.settingManager.getCurrentSetting();
       const theme = this.forceGraph.view.theme;
       const searchResult = this.forceGraph.view.settingManager.searchResult;
+      const anyHighlighted = this.getIsAnyHighlighted();
+      // Selected nodes always render at full opacity in their selection colour.
       if (this.selectedNodes.has(node)) {
-        color = selectedColor;
-      } else if (this.isHighlightedNode(node)) {
-        color = node === this.hoveredNode ? settings.display.nodeHoverColor : settings.display.nodeHoverNeighbourColor;
-      } else {
-        color = theme.graphNode;
-        settings.groups.forEach((group, index6) => {
-          if (group.query.trim().length === 0)
-            return;
-          const searchStateGroup = searchResult.value.groups[index6];
-          if (searchStateGroup) {
-            const searchGroupfilePaths = searchStateGroup.files.map((file) => file.path);
-            if (searchGroupfilePaths.includes(node.path))
-              color = group.color;
-          }
-        });
+        return hexToRGBA(selectedColor, 1);
       }
-      const rgba2 = hexToRGBA(
-        color,
-        this.getIsAnyHighlighted() && !this.isHighlightedNode(node) ? 0.5 : 1
-      );
-      return rgba2;
+      // Resolve the node's natural colour (respects group colours).
+      let color = theme.graphNode;
+      settings.groups.forEach((group, index6) => {
+        if (group.query.trim().length === 0) return;
+        const searchStateGroup = searchResult.value.groups[index6];
+        if (searchStateGroup) {
+          const searchGroupfilePaths = searchStateGroup.files.map((file) => file.path);
+          if (searchGroupfilePaths.includes(node.path))
+            color = group.color;
+        }
+      });
+      // When hovering: dim non-neighbourhood nodes; keep hovered node and
+      // neighbours at their natural colour (no special highlight colour applied).
+      const opacity = anyHighlighted && !this.isHighlightedNode(node) ? 0.3 : 1;
+      return hexToRGBA(color, opacity);
     };
     this.getIsAnyHighlighted = () => {
       return this.highlightedNodes.size !== 0 || this.highlightedLinks.size !== 0;
