@@ -27,7 +27,7 @@
   "temporaryGlobalGraphSetting": {
     "filter": {
       "searchQuery": "",
-      "showOrphans": true,
+      "showOrphans": false,
       "showAttachments": false
     },
     "groups": [],
@@ -50,7 +50,6 @@
   "pluginSetting": {
     "maxNodeNumber": 1000,
     "searchEngine": "default",
-    "rightClickToPan": false,
     "commandLeftClickNode": "openNodeInNewTab",
     "commandRightClickNode": "focusNode"
   }

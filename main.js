@@ -14623,9 +14623,7 @@ var SettingSchema = z.object({
   pluginSetting: z.object({
     maxNodeNumber: z.number(),
     searchEngine: z.nativeEnum(SearchEngineType),
-    rightClickToPan: z.boolean().default(false),
-    commandLeftClickNode: z.nativeEnum(CommandClickNodeAction).default("openNodeInNewTab" /* openNodeInNewTab */),
-    commandRightClickNode: z.nativeEnum(CommandClickNodeAction).default("focusNode" /* focusNode */)
+    commandLeftClickNode: z.nativeEnum(CommandClickNodeAction).default("openNodeInNewTab" /* openNodeInNewTab */)
   })
 });
 
@@ -14713,9 +14711,7 @@ var DEFAULT_SETTING = {
   pluginSetting: {
     maxNodeNumber: 1e3,
     searchEngine: "default" /* default */,
-    rightClickToPan: false,
-    commandLeftClickNode: "openNodeInNewTab" /* openNodeInNewTab */,
-    commandRightClickNode: "focusNode" /* focusNode */
+    commandLeftClickNode: "openNodeInNewTab" /* openNodeInNewTab */
   }
 };
 
@@ -14766,16 +14762,6 @@ var SettingTab = class extends import_obsidian3.PluginSettingTab {
       });
     });
     containerEl.createEl("h2", { text: "Controls" });
-    new import_obsidian3.Setting(containerEl).setName("Right click to pan").setDesc(
-      "If true, right click will pan the graph. Otherwise, Cmd + left click will pan the graph."
-    ).addToggle((toggle) => {
-      toggle.setValue(pluginSetting.rightClickToPan).onChange(async (value) => {
-        this.plugin.settingManager.updateSettings((setting) => {
-          setting.value.pluginSetting.rightClickToPan = value;
-        });
-        this.plugin.activeGraphViews.forEach((view) => view.refreshGraph());
-      });
-    });
     new import_obsidian3.Setting(containerEl).setName("Command + left click node").setDesc("What to do when command + left click a node").addDropdown((dropdown) => {
       dropdown.addOptions({
         ["openNodeInNewTab" /* openNodeInNewTab */]: "Open node in new tab",
@@ -14787,17 +14773,7 @@ var SettingTab = class extends import_obsidian3.PluginSettingTab {
         this.plugin.activeGraphViews.forEach((view) => view.refreshGraph());
       });
     });
-    new import_obsidian3.Setting(containerEl).setName("Command + right click node").setDesc("What to do when command + right click a node").addDropdown((dropdown) => {
-      dropdown.addOptions({
-        ["openNodeInNewTab" /* openNodeInNewTab */]: "Open node in new tab",
-        ["focusNode" /* focusNode */]: "Focus on node"
-      }).setValue(pluginSetting.commandRightClickNode).onChange(async (value) => {
-        this.plugin.settingManager.updateSettings((setting) => {
-          setting.value.pluginSetting.commandRightClickNode = value;
-        });
-        this.plugin.activeGraphViews.forEach((view) => view.refreshGraph());
-      });
-    });
+
   }
 };
 
@@ -64928,27 +64904,21 @@ var ForceGraphEngine = class {
       }
     };
     this.onNodeRightClick = (node, event) => {
-      const plugin = this.forceGraph.view.plugin;
-      const pluginSetting = plugin.settingManager.getSettings().pluginSetting;
-      if (this.commandDown || event.ctrlKey) {
-        const clickedNodeFile = this.findFileByNode(node);
-        if (pluginSetting.commandRightClickNode === "openNodeInNewTab" /* openNodeInNewTab */ && clickedNodeFile) {
-          this.openFileInNewTab(clickedNodeFile);
-        } else if (pluginSetting.commandRightClickNode === "focusNode" /* focusNode */)
-          this.focusOnCoords(node);
-        return;
+      const clickedNodeFile = this.findFileByNode(node);
+      if (clickedNodeFile) {
+        const menu = new import_obsidian4.Menu();
+        menu.addItem((item) => {
+          item.setTitle("Open in new tab")
+              .setIcon("file-plus")
+              .setSection("open")
+              .onClick(async () => {
+                const leaf = this.forceGraph.view.plugin.app.workspace.getLeaf("tab");
+                await leaf.openFile(clickedNodeFile);
+              });
+        });
+        this.forceGraph.view.plugin.app.workspace.trigger("file-menu", menu, clickedNodeFile, "file-explorer");
+        menu.showAtMouseEvent(event);
       }
-      if (!this.selectedNodes.has(node)) {
-        this.selectedNodes.clear();
-        this.selectedNodes.add(node);
-      }
-      const modal = new CommandModal(this.forceGraph.view, this.selectedNodes);
-      const promptEl = modal.containerEl.querySelector(".prompt");
-      const dv = promptEl == null ? void 0 : promptEl.createDiv({
-        text: `Commands will be run for ${this.selectedNodes.size} nodes.`
-      });
-      dv == null ? void 0 : dv.setAttribute("style", "padding: var(--size-4-3); font-size: var(--font-smaller);");
-      modal.open();
     };
     this.onNodeClick = (node, event) => {
       const plugin = this.forceGraph.view.plugin;
@@ -65310,7 +65280,7 @@ var ForceGraph2 = class {
       createNotice(`Too many nodes, there are ${_graph.nodes.length} nodes`);
     const divEl = this.createNodeLabel();
     this.instance = _3dForceGraph({
-      controlType: pluginSetting.rightClickToPan ? void 0 : "orbit",
+      controlType: "orbit",
       extraRenderers: [
         // @ts-ignore https://github.com/vasturiano/3d-force-graph/blob/522d19a831e92015ff77fb18574c6b79acfc89ba/example/html-nodes/index.html#L27C9-L29
         new CSS2DRenderer({
@@ -65353,10 +65323,8 @@ var ForceGraph2 = class {
       return cssObject;
     }).nodeThreeObjectExtend(true);
     this.updateConfig(this.view.settingManager.getCurrentSetting());
-    if (!pluginSetting.rightClickToPan) {
-      const controls3 = this.instance.controls();
-      controls3.mouseButtons.RIGHT = void 0;
-    }
+    const controls3 = this.instance.controls();
+    controls3.mouseButtons.RIGHT = void 0;
     (_a3 = this.view.contentEl.querySelector(".scene-nav-info")) == null ? void 0 : _a3.setText("");
   }
   createNodeLabel() {
