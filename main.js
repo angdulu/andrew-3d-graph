@@ -66757,6 +66757,10 @@ var Graph3dView = class {
 
 // src/views/graph/GlobalGraph3dView.ts
 var getNewGlobalGraph = (plugin, config2) => {
+  if (plugin.globalGraphIsDirty) {
+    plugin.globalGraph = Graph.createFromApp(plugin.app);
+    plugin.globalGraphIsDirty = false;
+  }
   if (!config2)
     return plugin.globalGraph;
   return plugin.globalGraph.clone().filter((node) => {
@@ -66847,6 +66851,10 @@ var traverseNode = (graph2, id, depth, linkType) => {
   };
 };
 var getNewLocalGraph = (plugin, config2) => {
+  if (plugin.globalGraphIsDirty) {
+    plugin.globalGraph = Graph.createFromApp(plugin.app);
+    plugin.globalGraphIsDirty = false;
+  }
   var _a3;
   const centerFile = (_a3 = config2 == null ? void 0 : config2.centerFile) != null ? _a3 : plugin.app.workspace.getActiveFile();
   if (!centerFile || !config2)
@@ -67065,6 +67073,8 @@ var PostProcessorGraph3dView = class extends Graph3dView {
 var Graph3dPlugin = class extends import_obsidian20.Plugin {
   constructor() {
     super(...arguments);
+    this.globalGraphIsDirty = false;
+    this.resolveTimer = null;
     this.cacheIsReady = new State(
       this.app.metadataCache.resolvedLinks !== void 0
     );
@@ -67085,6 +67095,7 @@ var Graph3dPlugin = class extends import_obsidian20.Plugin {
       if (this.cacheIsReady.value && !deepCompare(this._resolvedCache, this.app.metadataCache.resolvedLinks)) {
         this._resolvedCache = structuredClone(this.app.metadataCache.resolvedLinks);
         this.globalGraph = Graph.createFromApp(this.app);
+        this.globalGraphIsDirty = false;
         if (this.isCacheReadyOnce) {
           this.activeGraphViews.forEach((view) => {
             view.handleMetadataCacheChange();
@@ -67096,6 +67107,16 @@ var Graph3dPlugin = class extends import_obsidian20.Plugin {
           view.handleMetadataCacheChange();
         });
       }
+    };
+    this.onResolveEvent = () => {
+      if (this.activeGraphViews.length === 0) {
+        this.globalGraphIsDirty = true;
+        return;
+      }
+      clearTimeout(this.resolveTimer);
+      this.resolveTimer = setTimeout(() => {
+        this.onGraphCacheChanged();
+      }, 1000);
     };
     /**
      * Opens a local graph view in a new leaf
@@ -67165,11 +67186,11 @@ var Graph3dPlugin = class extends import_obsidian20.Plugin {
   onunload() {
     super.unload();
     this.app.metadataCache.off("resolved", this.onGraphCacheReady);
-    this.app.metadataCache.off("resolve", this.onGraphCacheChanged);
+    this.app.metadataCache.off("resolve", this.onResolveEvent);
   }
   initListeners() {
     this.app.metadataCache.on("resolved", this.onGraphCacheReady);
-    this.app.metadataCache.on("resolve", this.onGraphCacheChanged);
+    this.app.metadataCache.on("resolve", this.onResolveEvent);
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
         if (!file)
