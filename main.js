@@ -14697,9 +14697,9 @@ var MySettingManager = class {
   }
   static getNewSetting(type) {
     if (type === "global" /* global */) {
-      return defaultGlobalGraphSetting;
+      return JSON.parse(JSON.stringify(defaultGlobalGraphSetting));
     } else {
-      return defaultLocalGraphSetting;
+      return JSON.parse(JSON.stringify(defaultLocalGraphSetting));
     }
   }
 };
@@ -66569,54 +66569,55 @@ var Graph3dView = class {
    */
   handleSettingUpdate(newSetting, ...path) {
     var _a3, _b3, _c2, _d2, _e, _f, _g, _h, _i;
-    if (path.includes("")) {
+    const isReset = path.includes("");
+    if (isReset) {
       (_a3 = this.forceGraph) == null ? void 0 : _a3.interactionManager.updateNodeLabelDiv();
     }
-    if (path.some((p) => p === "filter.showAttachments" || p === "filter.showOrphans")) {
+    if (isReset || path.some((p) => p === "filter.showAttachments" || p === "filter.showOrphans")) {
       this.updateGraphData(this.getNewGraphData());
     }
-    if (path.some((p) => p.startsWith("groups"))) {
+    if (isReset || path.some((p) => p.startsWith("groups"))) {
       (_b3 = this.forceGraph) == null ? void 0 : _b3.interactionManager.updateColor();
     }
-    if (path.includes("display.nodeSize")) {
+    if (isReset || path.includes("display.nodeSize")) {
       (_c2 = this.forceGraph) == null ? void 0 : _c2.updateConfig({
         display: {
           nodeSize: newSetting.display.nodeSize
         }
       });
     }
-    if (path.includes("display.linkDistance")) {
+    if (isReset || path.includes("display.linkDistance")) {
       (_d2 = this.forceGraph) == null ? void 0 : _d2.updateConfig({
         display: {
           linkDistance: newSetting.display.linkDistance
         }
       });
     }
-    if (path.includes("display.linkThickness")) {
+    if (isReset || path.includes("display.linkThickness")) {
       (_e = this.forceGraph) == null ? void 0 : _e.updateConfig({
         display: {
           linkThickness: newSetting.display.linkThickness
         }
       });
     }
-    if (path.includes("display.nodeRepulsion")) {
+    if (isReset || path.includes("display.nodeRepulsion")) {
       (_f = this.forceGraph) == null ? void 0 : _f.updateConfig({
         display: {
           nodeRepulsion: newSetting.display.nodeRepulsion
         }
       });
     }
-    if (path.includes("display.showCenterCoordinates")) {
+    if (isReset || path.includes("display.showCenterCoordinates")) {
       (_g = this.forceGraph) == null ? void 0 : _g.updateConfig({
         display: {
           showCenterCoordinates: newSetting.display.showCenterCoordinates
         }
       });
     }
-    if (path.includes("display.showExtension") || path.includes("display.showFullPath")) {
+    if (isReset || path.includes("display.showExtension") || path.includes("display.showFullPath")) {
       (_h = this.forceGraph) == null ? void 0 : _h.interactionManager.updateNodeLabelDiv();
     }
-    if (path.includes("display.dagOrientation")) {
+    if (isReset || path.includes("display.dagOrientation")) {
       (_i = this.forceGraph) == null ? void 0 : _i.updateConfig({
         display: {
           dagOrientation: newSetting.display.dagOrientation
@@ -66805,7 +66806,7 @@ var LocalGraph3dView = class extends Graph3dView {
   }
   handleSettingUpdate(newSetting, ...path) {
     super.handleSettingUpdate(newSetting, ...path);
-    if (path.some((p) => p === "filter.depth" || p === "filter.linkType")) {
+    if (path.includes("") || path.some((p) => p === "filter.depth" || p === "filter.linkType")) {
       this.updateGraphData();
     }
   }
