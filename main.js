@@ -14616,12 +14616,7 @@ var LocalGraphSettingsSchema = z.object({
   groups: GroupSettingsSchema,
   display: LocalDisplaySettingsSchema
 });
-var SavedSettingSchema = z.object({
-  title: z.string(),
-  id: z.string(),
-  setting: GlobalGraphSettingsSchema.or(LocalGraphSettingsSchema),
-  type: z.nativeEnum(GraphType)
-});
+// SavedSettingSchema removed
 var SettingSchema = z.object({
   temporaryLocalGraphSetting: LocalGraphSettingsSchema,
   temporaryGlobalGraphSetting: GlobalGraphSettingsSchema,
@@ -65517,99 +65512,7 @@ var UtilitySettingsView = async (containerEl, view) => {
   });
 };
 
-// src/util/generateUUID.ts
-function generateUUID3() {
-  let d = new Date().getTime();
-  if (typeof performance !== "undefined" && typeof performance.now === "function") {
-    d += performance.now();
-  }
-  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c2) {
-    const r = (d + Math.random() * 16) % 16 | 0;
-    d = Math.floor(d / 16);
-    return (c2 === "x" ? r : r & 3 | 8).toString(16);
-  });
-  return uuid;
-}
-
-// src/views/settings/categories/SaveSettingGroupItem.ts
-var import_obsidian6 = require("obsidian");
-var addSaveSettingGroupItem = (containerEl, savedSetting, view) => {
-  const innerEl = containerEl.createDiv({
-    attr: {
-      style: "display: flex; flex-direction: row; justify-content: space-between; align-items: center;"
-    }
-  });
-  const nameSetting = new import_obsidian6.TextComponent(innerEl);
-  nameSetting.setValue(savedSetting.title).onChange(async (value) => {
-    view.plugin.settingManager.updateSettings((settings) => {
-      const setting = settings.value.savedSettings.find(
-        (setting2) => setting2.id === savedSetting.id
-      );
-      if (setting) {
-        setting.title = value;
-      }
-      return settings;
-    });
-  });
-  const checkButton = new import_obsidian6.ExtraButtonComponent(innerEl);
-  checkButton.setIcon("undo-2").setTooltip("Apply").onClick(async () => {
-    view.settingManager.applySettings(savedSetting.setting);
-  });
-  const updateButton = new import_obsidian6.ExtraButtonComponent(innerEl);
-  updateButton.setIcon("pencil").setTooltip("Update").onClick(async () => {
-    if (confirm(`Are you sure you want to update: ${savedSetting.title}?`)) {
-      createNotice(`Updating saved settings ${savedSetting.title}`);
-      view.plugin.settingManager.updateSettings((settings) => {
-        const targetSavedSetting = settings.value.savedSettings.find(
-          (setting) => setting.id === savedSetting.id
-        );
-        if (targetSavedSetting)
-          targetSavedSetting.setting = view.settingManager.getCurrentSetting();
-      });
-    }
-  });
-  const trashButton = new import_obsidian6.ExtraButtonComponent(innerEl);
-  trashButton.setIcon("trash").setTooltip("Delete").onClick(async () => {
-    if (confirm(`Are you sure you want to delete: ${savedSetting.title}?`)) {
-      innerEl.remove();
-      view.plugin.settingManager.updateSettings((settings) => {
-        settings.value.savedSettings = settings.value.savedSettings.filter(
-          (setting) => setting.id !== savedSetting.id
-        );
-      });
-    }
-  });
-  trashButton.extraSettingsEl.style.color = "red";
-};
-
-// src/views/settings/categories/SavedSettingsView.ts
-var import_obsidian7 = require("obsidian");
-var SavedSettingsView = (containerEl, view) => {
-  const div = containerEl.createDiv({
-    cls: "saved-settings-view",
-    attr: {
-      style: "display: flex; flex-direction: column; gap: 4px;"
-    }
-  });
-  view.plugin.settingManager.getSettings().savedSettings.filter((setting) => setting.type === view.graphType).forEach((setting) => {
-    addSaveSettingGroupItem(div, setting, view);
-  });
-  const _button = new import_obsidian7.Setting(div).addButton((button) => {
-    button.setButtonText("Save current settings").onClick(async () => {
-      const newSetting = {
-        id: generateUUID3(),
-        title: "New",
-        setting: view.settingManager.getCurrentSetting(),
-        type: view.graphType
-      };
-      addSaveSettingGroupItem(div, newSetting, view);
-      div.append(_button.settingEl);
-      view.plugin.settingManager.updateSettings((settings) => {
-        settings.value.savedSettings.push(newSetting);
-      });
-    });
-  });
-};
+// generateUUID3, addSaveSettingGroupItem, and SavedSettingsView removed
 
 // src/views/settings/categories/FilterSettingsView.ts
 var import_obsidian10 = require("obsidian");
